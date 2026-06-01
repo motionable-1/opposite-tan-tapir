@@ -1,19 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperframes Composition</title>
+  <title>Eye Ewur - Luxury Eyewear Promo</title>
+  
+  <!-- Premium Fonts import: Cinzel for classical luxury, Space Grotesk for technical futuristic style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <style>
     :root {
       color-scheme: dark;
-      font-family: Inter, sans-serif;
       background: transparent;
       color: #f6f1e8;
       font-kerning: normal;
       text-rendering: geometricPrecision;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      
+      /* Luxury Palette variables */
+      --bg-dark: #050508;
+      --gold-primary: #e6c687;
+      --gold-secondary: #f5e3b5;
+      --gold-dark: #9c7441;
+      --gold-glow: rgba(230, 198, 135, 0.25);
+      --cyan-primary: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.25);
+      --text-main: #fcfbf9;
+      --text-muted: rgba(252, 251, 249, 0.6);
+      --text-dim: rgba(252, 251, 249, 0.35);
     }
 
     * {
@@ -25,8 +42,10 @@
       width: 100%;
       height: 100%;
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      background: #0b0b0d;
+      background: var(--bg-dark);
+      font-family: 'Space Grotesk', sans-serif;
     }
 
     #stage {
@@ -34,190 +53,1211 @@
       width: 1920px;
       height: 1080px;
       overflow: hidden;
-      background:
-        linear-gradient(180deg, rgb(255 255 255 / 0.04), transparent 38%),
-        radial-gradient(ellipse at 50% 52%, rgb(255 255 255 / 0.07), transparent 48%),
-        #0b0b0d;
+      background: var(--bg-dark);
     }
 
-    .preview-pending-scene {
+    /* Ambient Life overlays (Global layers) */
+    .global-noise {
       position: absolute;
       inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .global-grid {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.12;
+      background-size: 60px 60px;
+      background-image: 
+        linear-gradient(to right, rgba(230, 198, 135, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(230, 198, 135, 0.1) 1px, transparent 1px);
+      mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 80%);
+    }
+
+    .global-ambient-glow {
+      position: absolute;
+      width: 1000px;
+      height: 1000px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(230, 198, 135, 0.06) 0%, rgba(6, 182, 212, 0.03) 50%, transparent 100%);
+      filter: blur(80px);
+    }
+
+    /* Global technical borders */
+    .frame-borders {
+      position: absolute;
+      inset: 40px;
+      border: 1px solid rgba(230, 198, 135, 0.08);
+      z-index: 99;
+      pointer-events: none;
+    }
+
+    .frame-corner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--gold-primary);
+      z-index: 99;
+    }
+    .corner-tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+    .corner-tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+    .corner-bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+    .corner-br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+    .frame-status {
+      position: absolute;
+      top: 55px;
+      left: 65px;
+      z-index: 99;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
-      padding-left: 232px;
+      gap: 12px;
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .frame-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan-primary);
+      box-shadow: 0 0 12px var(--cyan-primary);
+    }
+
+    .frame-coordinates {
+      position: absolute;
+      bottom: 55px;
+      right: 65px;
+      z-index: 99;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      font-family: monospace;
+    }
+
+    /* Clip layout managed by Hyperframes framework */
+    .clip {
+      position: absolute;
+      inset: 0;
       overflow: hidden;
-      transform: translate3d(0, 0, 0);
+      transform-style: preserve-3d;
       backface-visibility: hidden;
     }
 
-    .preview-pending-scene::before {
+    /* Background support plates */
+    .bg-plate {
       position: absolute;
       inset: 0;
-      pointer-events: none;
-      content: "";
-      background:
-        linear-gradient(90deg, rgb(11 11 13 / 0.88) 0%, rgb(11 11 13 / 0.72) 28%, transparent 62%),
-        linear-gradient(90deg, rgb(255 255 255 / 0.03), transparent 34%),
-        linear-gradient(180deg, transparent 58%, rgb(0 0 0 / 0.34));
+      background-size: cover;
+      background-position: center;
+      transform: scale(1.05);
+      z-index: 1;
     }
 
-    .preview-pending-grid {
+    .bg-overlay {
       position: absolute;
       inset: 0;
-      pointer-events: none;
-      opacity: 0.28;
-      background-image:
-        linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-        linear-gradient(180deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
-      background-size: 72px 72px;
-      mask-image: radial-gradient(ellipse at center, black 0%, transparent 72%);
-    }
-
-    .preview-pending-content {
-      position: relative;
       z-index: 2;
-      width: 560px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      text-shadow: 0 20px 54px rgb(0 0 0 / 0.56);
-      will-change: transform, opacity;
+      background: linear-gradient(180deg, rgba(5, 5, 8, 0.85) 0%, rgba(5, 5, 8, 0.6) 50%, rgba(5, 5, 8, 0.9) 100%);
     }
 
-    .preview-pending-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      color: rgb(246 241 232 / 0.64);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      line-height: 1;
-      text-transform: uppercase;
-    }
-
-    .preview-pending-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #d6a15c;
-      box-shadow: 0 0 24px rgb(214 161 92 / 0.7);
-    }
-
-    .preview-pending-title {
-      max-width: 560px;
-      margin-top: 20px;
-      font-size: 54px;
-      font-weight: 760;
-      letter-spacing: 0;
-      line-height: 0.98;
-    }
-
-    .preview-pending-subtitle {
-      max-width: 430px;
-      margin-top: 14px;
-      color: rgb(246 241 232 / 0.58);
-      font-size: 20px;
-      font-weight: 500;
-      letter-spacing: 0;
-      line-height: 1.35;
-    }
-
-    .preview-pending-progress {
-      width: 360px;
-      height: 2px;
-      margin-top: 32px;
-      overflow: hidden;
-      background: rgb(246 241 232 / 0.12);
-    }
-
-    .preview-pending-progress span {
-      display: block;
+    /* Content styling */
+    .scene-content {
+      position: relative;
+      z-index: 10;
       width: 100%;
       height: 100%;
-      transform-origin: left center;
-      background: linear-gradient(90deg, #9c7441, #f1d4a8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 120px;
     }
+
+    /* Luxury Masked Text Reveals */
+    .line-mask {
+      overflow: hidden;
+      display: block;
+      line-height: 1.1;
+      margin: 4px 0;
+    }
+
+    .anim-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-main);
+      text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      margin: 0;
+      text-align: center;
+    }
+
+    .anim-subtitle {
+      font-family: 'Space Grotesk', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--gold-primary);
+      font-weight: 500;
+      text-align: center;
+      margin: 0;
+    }
+
+    /* SPECIFIC SCENE CONTENT */
+
+    /* SCENE 1: Opener */
+    #scene-1 .anim-title {
+      font-size: 110px;
+      letter-spacing: 0.25em;
+    }
+
+    #scene-1 .anim-subtitle {
+      font-size: 18px;
+      margin-top: 15px;
+    }
+
+    .svg-glasses-container {
+      position: absolute;
+      width: 600px;
+      height: 250px;
+      bottom: 120px;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .glasses-path {
+      fill: none;
+      stroke: var(--gold-primary);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 15px var(--gold-glow));
+    }
+
+    /* SCENE 2: Blueprints & Precision */
+    .grid-draft {
+      position: absolute;
+      inset: 150px 250px;
+      border: 1px dashed rgba(6, 182, 212, 0.15);
+      z-index: 3;
+    }
+
+    .blueprint-circle {
+      position: absolute;
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .blueprint-circle-inner {
+      width: 75%;
+      height: 75%;
+      border: 1px dashed rgba(230, 198, 135, 0.25);
+      border-radius: 50%;
+    }
+
+    .axis-line {
+      position: absolute;
+      background: rgba(6, 182, 212, 0.25);
+    }
+    .axis-h { width: 100%; height: 1px; }
+    .axis-v { width: 1px; height: 100%; }
+
+    .laser-scanline {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--cyan-primary), transparent);
+      box-shadow: 0 0 20px var(--cyan-primary);
+      z-index: 8;
+      opacity: 0.8;
+    }
+
+    .precision-badge {
+      padding: 10px 24px;
+      background: rgba(5, 5, 8, 0.8);
+      border: 1px solid var(--cyan-primary);
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 20px;
+      letter-spacing: 0.1em;
+      color: var(--cyan-primary);
+      margin-top: 40px;
+      box-shadow: 0 0 24px rgba(6, 182, 212, 0.15);
+    }
+
+    #scene-2 .anim-title {
+      font-size: 70px;
+      letter-spacing: 0.15em;
+    }
+
+    .chip-container {
+      position: absolute;
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tech-chip {
+      background: rgba(12, 12, 16, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(230, 198, 135, 0.2);
+      border-left: 3px solid var(--gold-primary);
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--text-main);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* SCENE 3: Visionary Aesthetic & Parallax Glass */
+    .glass-card-stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 4;
+    }
+
+    .glass-card {
+      position: absolute;
+      width: 500px;
+      height: 300px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 50px 100px rgba(0,0,0,0.6);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-glow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      box-shadow: 0 0 15px var(--gold-primary);
+    }
+
+    .card-tech-text {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      line-height: 1.5;
+    }
+
+    #scene-3 .anim-title {
+      font-size: 65px;
+      letter-spacing: 0.12em;
+    }
+
+    /* SCENE 4: Product Highlight & VISOR Design */
+    .product-visor-wrap {
+      position: relative;
+      width: 700px;
+      height: 350px;
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .visor-svg {
+      width: 650px;
+      height: 300px;
+    }
+
+    .visor-lens {
+      fill: url(#lensGradient);
+      stroke: var(--cyan-primary);
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 25px rgba(6, 182, 212, 0.45));
+    }
+
+    .visor-frame {
+      fill: none;
+      stroke: var(--gold-primary);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 15px var(--gold-glow));
+    }
+
+    .visor-accent {
+      stroke: var(--text-main);
+      stroke-width: 1.5;
+      opacity: 0.8;
+    }
+
+    .product-callout {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 15;
+    }
+
+    .callout-line {
+      height: 1px;
+      background: linear-gradient(90deg, var(--gold-primary), transparent);
+    }
+
+    .callout-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      box-shadow: 0 0 12px var(--gold-primary);
+    }
+
+    #scene-4 .anim-title {
+      font-size: 75px;
+      letter-spacing: 0.2em;
+    }
+
+    /* SCENE 5: End Card / CTA */
+    #scene-5 .anim-title {
+      font-size: 120px;
+      letter-spacing: 0.35em;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-secondary) 50%, var(--gold-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 15px rgba(230, 198, 135, 0.15));
+    }
+
+    #scene-5 .anim-subtitle {
+      font-size: 16px;
+      margin-top: 15px;
+      letter-spacing: 0.4em;
+    }
+
+    .cta-button {
+      margin-top: 60px;
+      padding: 16px 45px;
+      background: rgba(230, 198, 135, 0.05);
+      border: 1px solid var(--gold-primary);
+      border-radius: 100px;
+      color: var(--gold-secondary);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      font-weight: 600;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 40px rgba(230, 198, 135, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute;
+      inset: -1px;
+      border-radius: 100px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transform: translateX(-100%);
+    }
+
+    .outro-monogram {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 30px;
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- ROOT COMPOSITION STAGE -->
   <div
     id="stage"
     data-composition-id="Main"
     data-start="0"
-    data-duration="11.667"
+    data-duration="22.5"
     data-width="1920"
     data-height="1080"
     data-motionabl-fps="30"
-    data-motionabl-scenes='[{"label":"Preview","from":0,"durationInFrames":350}]'
+    data-motionabl-scenes='[{"label":"1. Opener","from":0,"durationInFrames":150},{"label":"2. Craftsmanship","from":150,"durationInFrames":135},{"label":"3. Aesthetic","from":285,"durationInFrames":120},{"label":"4. Product","from":405,"durationInFrames":120},{"label":"5. Outro","from":525,"durationInFrames":150}]'
   >
+  
+    <!-- DECLARATIVE AUDIO CHOREOGRAPHY -->
+    
+    <!-- Cinematic Background Music (ambient fashion luxury) -->
+    <audio 
+      id="bg-music" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/music/1780351510355_1nb2mpgpl3w_music_Elegant_minimal_elec.mp3" 
+      preload="auto" 
+      data-start="0" 
+      data-duration="22.5" 
+      data-track-index="1" 
+      data-volume="0.18"
+    ></audio>
+    
+    <!-- Voiceover Scenes 1 to 5 (Brian - Resonant and Deep) -->
+    <audio 
+      id="vo-1" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/audio/1780351470471_cq9xnk9hm8_nPczCjzI_D_couvrez_Eye_Ewur__.mp3" 
+      preload="auto" 
+      data-start="0.6" 
+      data-duration="6.034" 
+      data-track-index="2" 
+      data-volume="1.0"
+    ></audio>
+    
+    <audio 
+      id="vo-2" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/audio/1780351477015_ux7zimssgq_nPczCjzI_Des_lignes_sculpt_es.mp3" 
+      preload="auto" 
+      data-start="5.2" 
+      data-duration="4.99" 
+      data-track-index="3" 
+      data-volume="1.0"
+    ></audio>
+    
+    <audio 
+      id="vo-3" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/audio/1780351481873_w4xhcxydlh_nPczCjzI_Une_esth_tique_visio.mp3" 
+      preload="auto" 
+      data-start="9.7" 
+      data-duration="3.553" 
+      data-track-index="4" 
+      data-volume="1.0"
+    ></audio>
+    
+    <audio 
+      id="vo-4" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/audio/1780351486332_0wxi95pk46e_nPczCjzI_Eye_Ewur__Plus_qu_un.mp3" 
+      preload="auto" 
+      data-start="13.7" 
+      data-duration="3.971" 
+      data-track-index="5" 
+      data-volume="1.0"
+    ></audio>
+    
+    <audio 
+      id="vo-5" 
+      src="https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/audio/1780351491314_meiruksvzj_nPczCjzI_Rejoignez_le_futur_d.mp3" 
+      preload="auto" 
+      data-start="17.8" 
+      data-duration="3.866" 
+      data-track-index="6" 
+      data-volume="1.0"
+    ></audio>
+
+    <!-- GLOBAL AMBIENT OVERLAYS -->
+    <div class="global-noise"></div>
+    <div class="global-grid"></div>
+    <div class="global-ambient-glow"></div>
+    
+    <!-- Elegant Technical Frame Border -->
+    <div class="frame-borders">
+      <div class="frame-corner corner-tl"></div>
+      <div class="frame-corner corner-tr"></div>
+      <div class="frame-corner corner-bl"></div>
+      <div class="frame-corner corner-br"></div>
+    </div>
+    
+    <div class="frame-status">
+      <span class="frame-dot"></span>
+      <span>SYS_ACTIVE // EYE_EWUR_PROMO</span>
+    </div>
+    <div class="frame-coordinates">45°50'N // 1°15'E // HD_22.5s</div>
+
+
+    <!-- ================= SCENE 1: THE OPENER ================= -->
     <div
-      id="preview-pending"
-      class="clip preview-pending-scene"
+      id="scene-1"
+      class="clip"
       data-start="0"
-      data-duration="11.667"
+      data-duration="5.0"
       data-track-index="0"
     >
-      <div class="preview-pending-grid" aria-hidden="true"></div>
-      <div class="preview-pending-content">
-        <div class="preview-pending-status">
-          <span class="preview-pending-dot"></span>
-          <span>Preview</span>
+      <!-- Background support plate (luxury black glass refractions) -->
+      <div 
+        class="bg-plate" 
+        style="background-image: url('https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/images/1780351534928_zpukkaw1ey7_eyewear_bg_1.png');"
+      ></div>
+      <div class="bg-overlay"></div>
+      
+      <div class="scene-content">
+        <div class="line-mask">
+          <h1 class="anim-title s1-char-split">EYE EWUR</h1>
         </div>
-        <div class="preview-pending-title">Preparing preview</div>
-        <div class="preview-pending-subtitle">
-          Generated scenes will appear here when ready.
+        <div class="line-mask">
+          <p class="anim-subtitle s1-text-slide">L'AVENIR DU DESIGN</p>
         </div>
-        <div class="preview-pending-progress" aria-hidden="true">
-          <span></span>
+        
+        <!-- Detailed SVG geometric eyewear tracing -->
+        <div class="svg-glasses-container">
+          <svg viewBox="0 0 400 120" width="100%" height="100%">
+            <!-- Left Lens blueprint -->
+            <path class="glasses-path s1-svg-stroke" d="M 50 60 C 50 35, 150 35, 150 60 C 150 85, 50 85, 50 60 Z" />
+            <!-- Right Lens blueprint -->
+            <path class="glasses-path s1-svg-stroke" d="M 250 60 C 250 35, 350 35, 350 60 C 350 85, 250 85, 250 60 Z" />
+            <!-- Bridge connect -->
+            <path class="glasses-path s1-svg-stroke" d="M 150 50 A 50 50 0 0 1 250 50" />
+            <!-- Left Temple hinge -->
+            <path class="glasses-path s1-svg-stroke" d="M 50 55 C 30 55, 10 45, 10 30" />
+            <!-- Right Temple hinge -->
+            <path class="glasses-path s1-svg-stroke" d="M 350 55 C 370 55, 390 45, 390 30" />
+            
+            <!-- Technical alignment crosshairs -->
+            <line x1="100" y1="40" x2="100" y2="80" stroke="rgba(6, 182, 212, 0.4)" stroke-width="0.8" />
+            <line x1="80" y1="60" x2="120" y2="60" stroke="rgba(6, 182, 212, 0.4)" stroke-width="0.8" />
+            <line x1="300" y1="40" x2="300" y2="80" stroke="rgba(6, 182, 212, 0.4)" stroke-width="0.8" />
+            <line x1="280" y1="60" x2="320" y2="60" stroke="rgba(6, 182, 212, 0.4)" stroke-width="0.8" />
+          </svg>
         </div>
       </div>
     </div>
+
+
+    <!-- ================= SCENE 2: ELITE CRAFTSMANSHIP ================= -->
+    <div
+      id="scene-2"
+      class="clip"
+      data-start="5.0"
+      data-duration="4.5"
+      data-track-index="0"
+    >
+      <!-- Technical blueprint background support plate -->
+      <div 
+        class="bg-plate" 
+        style="background-image: url('https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/images/1780351552277_gmdq009uuor_eyewear_bg_2.png');"
+      ></div>
+      <div class="bg-overlay" style="background: linear-gradient(180deg, rgba(5,5,8,0.92) 0%, rgba(5,5,8,0.7) 50%, rgba(5,5,8,0.95) 100%);"></div>
+      
+      <!-- Blueprint drafting environment -->
+      <div class="grid-draft">
+        <!-- Blueprint components -->
+        <div class="blueprint-circle s2-blue-circ" style="width: 200px; height: 200px; top: 10%; left: 8%;">
+          <div class="blueprint-circle-inner"></div>
+          <div class="axis-line axis-h"></div>
+          <div class="axis-line axis-v"></div>
+        </div>
+        <div class="blueprint-circle s2-blue-circ" style="width: 150px; height: 150px; bottom: 15%; right: 10%;">
+          <div class="blueprint-circle-inner"></div>
+          <div class="axis-line axis-h"></div>
+          <div class="axis-line axis-v"></div>
+        </div>
+      </div>
+
+      <!-- Moving technical sweep -->
+      <div class="laser-scanline s2-laser-sweep"></div>
+
+      <!-- Technical chips layout -->
+      <div class="chip-container" style="top: 250px; left: 180px;">
+        <div class="tech-chip s2-chip-1">TITANE FLUIDE / GRADE 5</div>
+        <div class="tech-chip s2-chip-2" style="border-left-color: var(--cyan-primary);">SOUDURE LASER MICRO</div>
+      </div>
+      <div class="chip-container" style="top: 250px; right: 180px;">
+        <div class="tech-chip s2-chip-3">OPTIQUE ACTIVE AR-9</div>
+        <div class="tech-chip s2-chip-4" style="border-left-color: var(--cyan-primary);">RÉSISTANCE ABSOLUE</div>
+      </div>
+
+      <div class="scene-content">
+        <div class="line-mask">
+          <h2 class="anim-title s2-text-revealed">CRAFT / PRÉCISION</h2>
+        </div>
+        <div class="line-mask">
+          <p class="anim-subtitle s2-sub-revealed">DES LIGNES SCULPTÉES AU LASER</p>
+        </div>
+        
+        <!-- Live Counting metric widget -->
+        <div class="precision-badge s2-badge">
+          SURFACE_ACCURACY: <span id="s2-counter">0.00</span>%
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================= SCENE 3: VISIONARY AESTHETIC ================= -->
+    <div
+      id="scene-3"
+      class="clip"
+      data-start="9.5"
+      data-duration="4.0"
+      data-track-index="0"
+    >
+      <div class="bg-plate" style="background-image: url('https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/images/1780351534928_zpukkaw1ey7_eyewear_bg_1.png');"></div>
+      <div class="bg-overlay" style="background: linear-gradient(180deg, rgba(5,5,8,0.95) 0%, rgba(5,5,8,0.75) 50%, rgba(5,5,8,0.95) 100%);"></div>
+
+      <!-- Glass overlay parallax layers -->
+      <div class="glass-card-stage">
+        <!-- Floating glass cards -->
+        <div class="glass-card s3-glass-left" style="transform: translate3d(-350px, -50px, 0); z-index: 5;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-glow-dot"></div>
+            <div class="card-tech-text">SEC_098 // OPT_R_01</div>
+          </div>
+          <div class="card-tech-text" style="margin-top: 30px; font-size: 13px; color: var(--gold-primary);">
+            FILTRE POLARISÉ INTÉGRÉ<br/>PRODUIT PREMIUM FAÇONNÉ POUR L'HORIZON
+          </div>
+          <div class="card-tech-text">LUMIÈRE DIRECTE REJETÉE 99.8%</div>
+        </div>
+
+        <div class="glass-card s3-glass-right" style="transform: translate3d(350px, 80px, 0); z-index: 6;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-glow-dot" style="background: var(--cyan-primary); box-shadow: 0 0 15px var(--cyan-primary);"></div>
+            <div class="card-tech-text">SYS_V_88 // BR-5</div>
+          </div>
+          <div class="card-tech-text" style="margin-top: 30px; font-size: 13px; color: var(--cyan-primary);">
+            MATÉRIAU COMPOSITE CARBONE<br/>AESTHETICS OF THE FUTURE NOW
+          </div>
+          <div class="card-tech-text">STRUCTURE ERGONOMIQUE ALLÉGÉE</div>
+        </div>
+      </div>
+
+      <div class="scene-content">
+        <div class="line-mask">
+          <h2 class="anim-title s3-title-reveal">ESTHÉTIQUE FUTURE</h2>
+        </div>
+        <div class="line-mask">
+          <p class="anim-subtitle s3-sub-reveal" style="color: var(--cyan-primary);">L'ESTHÉTIQUE DE DEMAIN</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================= SCENE 4: PRODUCT PRESENTATION ================= -->
+    <div
+      id="scene-4"
+      class="clip"
+      data-start="13.5"
+      data-duration="4.0"
+      data-track-index="0"
+    >
+      <div class="bg-plate" style="background-image: url('https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/images/1780351552277_gmdq009uuor_eyewear_bg_2.png');"></div>
+      <div class="bg-overlay"></div>
+
+      <!-- Holographic callouts pointing to visor features -->
+      <div class="product-callout s4-callout-1" style="top: 250px; left: 320px; flex-direction: row-reverse;">
+        <div class="callout-dot"></div>
+        <div class="callout-line" style="width: 100px;"></div>
+        <div class="tech-chip" style="font-size: 11px; padding: 8px 16px;">Visière Panoramique</div>
+      </div>
+
+      <div class="product-callout s4-callout-2" style="bottom: 280px; right: 300px;">
+        <div class="callout-dot" style="background: var(--cyan-primary); box-shadow: 0 0 12px var(--cyan-primary);"></div>
+        <div class="callout-line" style="width: 130px; background: linear-gradient(90deg, var(--cyan-primary), transparent);"></div>
+        <div class="tech-chip" style="font-size: 11px; padding: 8px 16px; border-left-color: var(--cyan-primary);">Branches Titane Flex</div>
+      </div>
+
+      <div class="scene-content">
+        <div class="line-mask">
+          <h2 class="anim-title s4-title-reveal">SIGNATURE EWUR</h2>
+        </div>
+        <div class="line-mask">
+          <p class="anim-subtitle s4-sub-reveal">L'EXCELLENCE SANS CONCESSION</p>
+        </div>
+
+        <!-- Masterfully crafted SVG Visor -->
+        <div class="product-visor-wrap s4-visor">
+          <svg class="visor-svg" viewBox="0 0 600 250">
+            <defs>
+              <!-- Futuristic cyan to purple glass gradient -->
+              <linearGradient id="lensGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(6, 182, 212, 0.45)" />
+                <stop offset="50%" stop-color="rgba(99, 102, 241, 0.25)" />
+                <stop offset="100%" stop-color="rgba(230, 198, 135, 0.15)" />
+              </linearGradient>
+            </defs>
+            
+            <!-- Sleek background frame elements -->
+            <path class="visor-frame" d="M 50 120 L 550 120" opacity="0.4" />
+            
+            <!-- Visor carbon upper arch -->
+            <path class="visor-frame" d="M 120 70 Q 300 35, 480 70" />
+            
+            <!-- Glowing holographic lens visor -->
+            <path class="visor-lens" d="M 120 70 Q 300 45, 480 70 L 440 160 Q 300 190, 160 160 Z" />
+            
+            <!-- Upper metallic brow band -->
+            <path class="visor-accent" d="M 140 65 Q 300 40, 460 65" stroke="var(--gold-secondary)" stroke-width="2"/>
+            
+            <!-- Futuristic scanner dots and HUD layout inside lens -->
+            <circle cx="300" cy="110" r="4" fill="var(--cyan-primary)" opacity="0.8"/>
+            <circle cx="300" cy="110" r="15" fill="none" stroke="var(--cyan-primary)" stroke-width="1" stroke-dasharray="4, 4" />
+            <circle cx="300" cy="110" r="30" fill="none" stroke="rgba(230, 198, 135, 0.3)" stroke-width="0.8" />
+            <path d="M 280 110 L 320 110" stroke="var(--cyan-primary)" stroke-width="0.8" />
+            <path d="M 300 90 L 300 130" stroke="var(--cyan-primary)" stroke-width="0.8" />
+            
+            <!-- Left and Right titanium hinges -->
+            <rect x="100" y="65" width="20" height="15" rx="3" fill="var(--gold-dark)" />
+            <rect x="480" y="65" width="20" height="15" rx="3" fill="var(--gold-dark)" />
+            <path class="visor-frame" d="M 100 72 L 50 82 C 30 86, 20 110, 20 120" />
+            <path class="visor-frame" d="M 500 72 L 550 82 C 570 86, 580 110, 580 120" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================= SCENE 5: OUTRO & BRANDING ================= -->
+    <div
+      id="scene-5"
+      class="clip"
+      data-start="17.5"
+      data-duration="5.0"
+      data-track-index="0"
+    >
+      <div class="bg-plate" style="background-image: url('https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/images/1780351534928_zpukkaw1ey7_eyewear_bg_1.png');"></div>
+      <div class="bg-overlay" style="background: radial-gradient(circle at 50% 50%, rgba(5,5,8,0.7) 0%, var(--bg-dark) 85%);"></div>
+
+      <div class="scene-content">
+        <!-- SVG Monogram Logo double-E (Eye Ewur) -->
+        <svg class="outro-monogram s5-logo-anim" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="var(--gold-primary)" stroke-width="1" stroke-dasharray="2, 2" />
+          <!-- E Monogram stylized left -->
+          <path d="M 35 35 L 55 35 M 35 50 L 50 50 M 35 65 L 55 65 M 35 35 L 35 65" fill="none" stroke="var(--gold-primary)" stroke-width="4.5" stroke-linecap="round" />
+          <!-- Mirror E stylized right -->
+          <path d="M 65 35 L 45 35 M 65 50 L 50 50 M 65 65 L 45 65 M 65 35 L 65 65" fill="none" stroke="var(--gold-primary)" stroke-width="4.5" stroke-linecap="round" opacity="0.5" />
+          <!-- Center lens hub -->
+          <circle cx="50" cy="50" r="5" fill="var(--cyan-primary)" />
+        </svg>
+
+        <div class="line-mask">
+          <h2 class="anim-title s5-title-reveal">EYE EWUR</h2>
+        </div>
+        <div class="line-mask">
+          <p class="anim-subtitle s5-sub-reveal">ÉLÉGANCE ABSOLUE // VISION UNIQUE</p>
+        </div>
+        
+        <!-- Call to action luxury capsule button -->
+        <div class="cta-button s5-button-reveal">
+          <div class="cta-glow s5-btn-glow"></div>
+          eyeewur.com
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="./vendor/gsap.min.js"></script>
   <script>
     window.__timelines = window.__timelines || {};
 
-    const timeline = gsap.timeline({ paused: true });
-    timeline.from(".preview-pending-content", {
+    const tl = gsap.timeline({ paused: true });
+
+    // Global properties defaults
+    gsap.defaults({ ease: "power3.out" });
+
+    // ==========================================
+    // CHOREOGRAPHY / TIMELINE DEFINITION (30fps)
+    // ==========================================
+
+    // SCENE 1: OPENER (0.0s - 5.0s, frames 0 - 150)
+    tl.fromTo("#scene-1 .bg-plate", 
+      { scale: 1.03, rotation: -0.5 }, 
+      { scale: 1.12, rotation: 0.5, duration: 5.0, ease: "sine.inOut" }, 
+      0
+    );
+
+    // Fade and reveal contents instead of clip itself
+    tl.fromTo("#scene-1 .scene-content", 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.8, ease: "power3.out" }, 
+      0
+    );
+
+    // Text animations: stagger character split rise
+    tl.from("#scene-1 .s1-char-split", {
+      letterSpacing: "0.05em",
       opacity: 0,
-      y: 34,
-      scale: 0.98,
+      y: 45,
+      scale: 0.95,
+      filter: "blur(8px)",
+      duration: 1.5,
+      ease: "power4.out"
+    }, 0.3);
+
+    tl.from("#scene-1 .s1-text-slide", {
+      letterSpacing: "0.1em",
+      opacity: 0,
+      yPercent: 100,
+      duration: 1.2,
+      ease: "power3.out"
+    }, 0.8);
+
+    // SVG Glasses draw lines
+    tl.from("#scene-1 .s1-svg-stroke", {
+      strokeDasharray: "1000",
+      strokeDashoffset: "1000",
+      opacity: 0,
+      scale: 0.88,
+      transformOrigin: "50% 50%",
+      duration: 2.2,
+      ease: "power2.inOut"
+    }, 0.5);
+
+    // Opener Scene Fade-Out
+    tl.to("#scene-1 .scene-content", {
+      opacity: 0,
+      filter: "blur(10px)",
+      scale: 1.05,
       duration: 0.8,
-      ease: "power4.out",
-    }, 0);
-    timeline.from(".preview-pending-grid", {
+      ease: "power3.in"
+    }, 4.2);
+
+
+    // ==========================================
+    // SCENE 2: PRECISION & BLUEPRINTS (5.0s - 9.5s, frames 150 - 285)
+    tl.fromTo("#scene-2 .scene-content", {
       opacity: 0,
-      scale: 1.08,
-      duration: 1.1,
-      ease: "power3.out",
-    }, 0);
-    timeline.to(".preview-pending-dot", {
-      opacity: 0.35,
-      duration: 0.9,
-      yoyo: true,
-      repeat: 10,
-      ease: "sine.inOut",
-    }, 0.25);
-    timeline.fromTo(".preview-pending-progress span", {
-      scaleX: 0.08,
+      scale: 0.95,
+      filter: "blur(10px)"
     }, {
-      scaleX: 0.82,
-      duration: 5.8,
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      duration: 0.8,
+      ease: "power3.out"
+    }, 4.2);
+
+    // Slow zoom inside blueprint background
+    tl.fromTo("#scene-2 .bg-plate", 
+      { scale: 1.05, rotation: 0.2 }, 
+      { scale: 1.13, rotation: -0.3, duration: 4.5, ease: "sine.inOut" }, 
+      4.2
+    );
+
+    // Precision text reveals
+    tl.from("#scene-2 .s2-text-revealed", {
+      opacity: 0,
+      yPercent: 120,
+      filter: "blur(4px)",
+      duration: 1.0,
+      ease: "back.out(1.2)"
+    }, 4.8);
+
+    tl.from("#scene-2 .s2-sub-revealed", {
+      opacity: 0,
+      yPercent: 120,
+      duration: 0.9,
+      ease: "power3.out"
+    }, 5.2);
+
+    // Rotate blueprint design circles
+    tl.fromTo("#scene-2 .s2-blue-circ", {
+      rotation: 0,
+      opacity: 0,
+      scale: 0.6
+    }, {
+      rotation: 180,
+      opacity: 0.5,
+      scale: 1,
+      stagger: 0.15,
+      duration: 1.8,
+      ease: "power3.out"
+    }, 4.4);
+
+    // Sweeping laser scanner
+    tl.fromTo("#scene-2 .s2-laser-sweep", 
+      { top: "10%" }, 
+      { top: "90%", duration: 2.2, ease: "power2.inOut" }, 
+      4.6
+    );
+
+    // Numeric Precision count up to 100.00%
+    const countObj = { value: 0 };
+    tl.to(countObj, {
+      value: 100,
+      duration: 2.2,
+      ease: "power2.out",
+      onUpdate: () => {
+        document.getElementById("s2-counter").textContent = countObj.value.toFixed(2);
+      }
+    }, 4.8);
+
+    // Tech chips popping in sequence
+    tl.from([".s2-chip-1", ".s2-chip-2", ".s2-chip-3", ".s2-chip-4"], {
+      opacity: 0,
+      x: (i) => (i < 2 ? -30 : 30),
+      scaleX: 0,
+      transformOrigin: (i) => (i < 2 ? "left center" : "right center"),
+      stagger: 0.1,
+      duration: 0.8,
+      ease: "back.out(1.5)"
+    }, 5.0);
+
+    tl.from("#scene-2 .s2-badge", {
+      opacity: 0,
+      y: 20,
+      scale: 0.95,
+      duration: 0.8,
+      ease: "power3.out"
+    }, 5.2);
+
+    // Transition Out Scene 2
+    tl.to("#scene-2 .scene-content", {
+      opacity: 0,
+      yPercent: -100,
+      duration: 0.8,
+      ease: "power4.in"
+    }, 8.7);
+
+
+    // ==========================================
+    // SCENE 3: AESTHETIC & PARALLAX GLASS (9.5s - 13.5s, frames 285 - 405)
+    tl.fromTo("#scene-3 .scene-content", {
+      opacity: 0,
+      yPercent: 100
+    }, {
+      opacity: 1,
+      yPercent: 0,
+      duration: 0.8,
+      ease: "power4.out"
+    }, 8.7);
+
+    tl.fromTo("#scene-3 .bg-plate", 
+      { scale: 1.04 }, 
+      { scale: 1.12, duration: 4.0, ease: "sine.inOut" }, 
+      8.7
+    );
+
+    // Title reveal
+    tl.from("#scene-3 .s3-title-reveal", {
+      opacity: 0,
+      yPercent: 100,
+      filter: "blur(5px)",
+      duration: 1.0,
+      ease: "power4.out"
+    }, 9.3);
+
+    tl.from("#scene-3 .s3-sub-reveal", {
+      opacity: 0,
+      yPercent: 100,
+      duration: 0.8,
+      ease: "power3.out"
+    }, 9.6);
+
+    // Glass cards spring slide-in from left and right edges with 3D rotation
+    tl.from(".s3-glass-left", {
+      opacity: 0,
+      x: -600,
+      rotationY: -45,
+      rotationZ: -5,
+      duration: 1.5,
+      ease: "elastic.out(1, 0.8)"
+    }, 9.1);
+
+    tl.from(".s3-glass-right", {
+      opacity: 0,
+      x: 600,
+      rotationY: 45,
+      rotationZ: 5,
+      duration: 1.5,
+      ease: "elastic.out(1, 0.8)"
+    }, 9.2);
+
+    // Glass cards subtle drifting parallax zoom
+    tl.to(".s3-glass-left", {
+      x: "+=20",
+      y: "-=10",
+      rotationY: "+=5",
+      duration: 3.5,
+      ease: "sine.inOut"
+    }, 9.5);
+    
+    tl.to(".s3-glass-right", {
+      x: "-=25",
+      y: "+=15",
+      rotationY: "-=5",
+      duration: 3.5,
+      ease: "sine.inOut"
+    }, 9.5);
+
+    // Transition Out Scene 3
+    tl.to("#scene-3 .scene-content", {
+      opacity: 0,
+      scale: 0.9,
+      filter: "blur(12px)",
+      duration: 0.8,
+      ease: "power3.in"
+    }, 12.7);
+
+
+    // ==========================================
+    // SCENE 4: PRODUCT PRESENTATION (13.5s - 17.5s, frames 405 - 525)
+    tl.fromTo("#scene-4 .scene-content", {
+      opacity: 0,
+      scale: 1.1,
+      filter: "blur(12px)"
+    }, {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      duration: 0.8,
+      ease: "power3.out"
+    }, 12.7);
+
+    tl.fromTo("#scene-4 .bg-plate", 
+      { scale: 1.05, rotation: -0.2 }, 
+      { scale: 1.14, rotation: 0.2, duration: 4.0, ease: "sine.inOut" }, 
+      12.7
+    );
+
+    // Text reveals
+    tl.from("#scene-4 .s4-title-reveal", {
+      opacity: 0,
+      yPercent: 120,
+      letterSpacing: "0.05em",
+      duration: 1.0,
+      ease: "power4.out"
+    }, 13.3);
+
+    tl.from("#scene-4 .s4-sub-reveal", {
+      opacity: 0,
+      yPercent: 120,
+      duration: 0.8,
+      ease: "power3.out"
+    }, 13.6);
+
+    // Visor product mockup drawing and floating
+    tl.from(".s4-visor", {
+      opacity: 0,
+      y: 60,
+      scale: 0.85,
+      rotationX: -20,
+      duration: 1.4,
+      ease: "back.out(1.3)"
+    }, 13.1);
+
+    // Subtle 3D visor float loop
+    tl.to(".s4-visor", {
+      y: "-=15",
+      rotationY: 8,
+      duration: 2.2,
       yoyo: true,
       repeat: 1,
-      ease: "power2.inOut",
-    }, 0.4);
-    timeline.to(".preview-pending-grid", {
-      opacity: 0.28,
-      duration: 0.001,
-      ease: "power1.out",
-    }, 11.667);
+      ease: "sine.inOut"
+    }, 14.0);
 
-    window.__timelines.Main = timeline;
+    // Holographic callout chips
+    tl.from(".s4-callout-1", {
+      opacity: 0,
+      x: -40,
+      scale: 0.9,
+      duration: 1.0,
+      ease: "back.out(1.5)"
+    }, 13.9);
+
+    tl.from(".s4-callout-2", {
+      opacity: 0,
+      x: 40,
+      scale: 0.9,
+      duration: 1.0,
+      ease: "back.out(1.5)"
+    }, 14.1);
+
+    // Transition Out Scene 4
+    tl.to("#scene-4 .scene-content", {
+      opacity: 0,
+      filter: "blur(10px)",
+      scale: 1.08,
+      duration: 0.7,
+      ease: "power4.in"
+    }, 16.8);
+
+
+    // ==========================================
+    // SCENE 5: OUTRO & BRANDING (17.5s - 22.5s, frames 525 - 675)
+    tl.fromTo("#scene-5 .scene-content", {
+      opacity: 0,
+      scale: 0.92,
+      filter: "blur(10px)"
+    }, {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      duration: 0.8,
+      ease: "power4.out"
+    }, 16.8);
+
+    tl.fromTo("#scene-5 .bg-plate", 
+      { scale: 1.03 }, 
+      { scale: 1.12, duration: 5.0, ease: "sine.inOut" }, 
+      16.8
+    );
+
+    // Monogram logo drawing/scaling
+    tl.from(".s5-logo-anim", {
+      opacity: 0,
+      scale: 0.7,
+      rotation: -180,
+      duration: 1.6,
+      ease: "back.out(1.4)"
+    }, 17.2);
+
+    // Brand title reveal
+    tl.from("#scene-5 .s5-title-reveal", {
+      opacity: 0,
+      y: 35,
+      filter: "blur(6px)",
+      duration: 1.3,
+      ease: "power4.out"
+    }, 17.6);
+
+    // Slogan reveal
+    tl.from("#scene-5 .s5-sub-reveal", {
+      opacity: 0,
+      yPercent: 100,
+      duration: 0.9,
+      ease: "power3.out"
+    }, 18.0);
+
+    // Premium CTA Capsule button
+    tl.from(".s5-button-reveal", {
+      opacity: 0,
+      y: 40,
+      scale: 0.9,
+      duration: 1.1,
+      ease: "back.out(1.8)"
+    }, 18.4);
+
+    // Reflection swoop sweep across button glass surface
+    tl.fromTo(".s5-btn-glow", 
+      { xPercent: -100 }, 
+      { xPercent: 150, duration: 1.5, ease: "power2.inOut" }, 
+      19.3
+    );
+
+    // Subtle branding ambient end pulse
+    tl.to(".global-ambient-glow", {
+      scale: 1.15,
+      opacity: 0.8,
+      duration: 2.5,
+      yoyo: true,
+      repeat: 1,
+      ease: "sine.inOut"
+    }, 17.5);
+
+    // Complete timeline setup and register
+    window.__timelines.Main = tl;
   </script>
 </body>
 </html>
